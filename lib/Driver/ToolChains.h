@@ -88,6 +88,14 @@ protected:
   virtual std::string
   getPostInputObjectPath(StringRef RuntimeLibraryPath) const;
 
+  /// Append the link options for static program to the argument list.
+  /// The link options can be different for platforms. By default, the link
+  /// options for Linux is appended.
+  ///
+  /// \param Arguments The argument list which is used in constructInvocation().
+  virtual void
+  appendLinkOptionsForStaticProgram(llvm::opt::ArgStringList &Arguments) const;
+
   InvocationInfo constructInvocation(const LinkJobAction &job,
                                      const JobContext &context) const override;
 
@@ -117,6 +125,10 @@ protected:
 
   std::string getPostInputObjectPath(
     StringRef RuntimeLibraryPath) const override;
+
+  virtual void appendLinkOptionsForStaticProgram(
+      llvm::opt::ArgStringList &Arguments) const override;
+
 public:
   Cygwin(const Driver &D, const llvm::Triple &Triple) : GenericUnix(D, Triple) {}
   ~Cygwin() = default;

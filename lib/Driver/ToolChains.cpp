@@ -1257,6 +1257,27 @@ std::string toolchains::GenericUnix::getPostInputObjectPath(
   return PostInputObjectPath.str();
 }
 
+void toolchains::GenericUnix::appendLinkOptionsForStaticProgram(
+    ArgStringList &Arguments) const {
+  // The following libraries are required to build a satisfactory
+  // static program
+  Arguments.push_back("-ldl");
+  Arguments.push_back("-lpthread");
+  Arguments.push_back("-lbsd");
+  Arguments.push_back("-licui18n");
+  Arguments.push_back("-licuuc");
+  // The runtime uses dlopen to look for the protocol conformances.
+  // Therefore, we need to ensure they appear in the dynamic table.
+  // This happens automatically for dynamically-linked programs, but
+  // in this case we have to take additional measures.
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("-export-dynamic");
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("--exclude-libs");
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("ALL");
+}
+
 ToolChain::InvocationInfo
 toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
                                              const JobContext &context) const {
@@ -1330,29 +1351,11 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
     SmallString<128> StaticRuntimeLibPath;
     getRuntimeStaticLibraryPath(StaticRuntimeLibPath, context.Args, *this);
     Arguments.push_back(context.Args.MakeArgString(StaticRuntimeLibPath));
-    // The following libraries are required to build a satisfactory
-    // static program
-    Arguments.push_back("-ldl");
-    Arguments.push_back("-lpthread");
-    Arguments.push_back("-lbsd");
-    Arguments.push_back("-licui18n");
-    Arguments.push_back("-licuuc");
-    // The runtime uses dlopen to look for the protocol conformances.
-    // Therefore, we need to ensure they appear in the dynamic table.
-    // This happens automatically for dynamically-linked programs, but
-    // in this case we have to take additional measures.
-    Arguments.push_back("-Xlinker");
-    Arguments.push_back("-export-dynamic");
-    Arguments.push_back("-Xlinker");
-    Arguments.push_back("--exclude-libs");
-    Arguments.push_back("-Xlinker");
-    Arguments.push_back("ALL");
-
+    appendLinkOptionsForStaticProgram(Arguments);
   }
   else {
     Arguments.push_back(context.Args.MakeArgString(RuntimeLibPath));
   }
-
 
   // Explicitly pass the target to the linker
   Arguments.push_back(context.Args.MakeArgString("--target=" + getTriple().str()));
@@ -1431,4 +1434,28 @@ std::string toolchains::Cygwin::getPostInputObjectPath(
     StringRef RuntimeLibraryPath) const {
   // Cygwin does not add "begin" and "end" objects.
   return "";
+}
+
+void toolchains::Cygwin::appendLinkOptionsForStaticProgram(
+    ArgStringList &Arguments) const {
+  // The following libraries are required to build a satisfactory
+  // static program
+  Arguments.push_back("-ldl");
+  Arguments.push_back("-lpthread");
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("--allow-multiple-definition");
+  Arguments.push_back("-lswiftCore");
+  Arguments.push_back("-lpsapi");
+  Arguments.push_back("-licui18n");
+  Arguments.push_back("-licuuc");
+  // The runtime uses dlopen to look for the protocol conformances.
+  // Therefore, we need to ensure they appear in the dynamic table.
+  // This happens automatically for dynamically-linked programs, but
+  // in this case we have to take additional measures.
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("--export-all-symbols");
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("--exclude-libs");
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("ALL");
 }
