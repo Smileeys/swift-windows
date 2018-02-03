@@ -136,11 +136,11 @@ Build Foundation
   SET DSTROOT=/
   SET PREFIX=/usr/
   SET MSYSTEM=MINGW64
-  c:/msys64//usr/bin/python ./configure Release -DXCTEST_BUILD_DIR=%WORK_DIR%/build/NinjaMinGW/xctest-mingw-x86_64
+  python3 ./configure Release --target=x86_64-windows-gnu -DXCTEST_BUILD_DIR=%WORK_DIR%/build/NinjaMinGW/xctest-mingw-x86_64
   SET SDKROOT=
   
   // FIXEM: Workaround for ninja to work. We should these commands to only one command 'ninja'.
-  c:/msys64/usr/bin/mkdir -p Build/Foundation/CoreFoundation Build/Foundation/Foundation
+  MKDIR Build\Foundation\CoreFoundation Build\Foundation\Foundation
   MKLINK /d BFC Build\Foundation\CoreFoundation
   MKLINK /d BFF Build\Foundation\Foundation
   sed -i -e "s;Build/Foundation/CoreFoundation/;BFC/;g"  -e "s;Build/Foundation/Foundation/;BFF/;g"  build.ninja
@@ -161,7 +161,7 @@ Install Foundation
   cp -p Foundation.swiftdoc Foundation.swiftmodule %INSTALL_DIR%/lib/swift/mingw/x86_64
 ```
 
-Unintall Foundation
+Uninstall Foundation
 -------------------
 ```
   SET INSTALL_DIR=%WORK_DIR%/build/NinjaMinGW/swift
@@ -180,17 +180,8 @@ Not implemented Foundation features
 - class Host: most part are not implemented
 - class NSFileManager: most part are not implemented
 
-Build hint
-----------
-  
-/* OLD */
-/*
-clang --target=x86_64-windows-gnu  -L/c/Work/swift_msvc/build/NinjaMinGW/swift/lib/swift/mingw  -Lbootstrap/x86_64-windows-gnu/usr/lib  ${CF_OBJS} ${SWF_OBJS}  -shared  -lswiftMinGwCrt `icu-config --ldflags` -Wl,-defsym,__CFConstantStringClassReference=_T010Foundation19_NSCFConstantStringCN,--allow-multiple-definition -lpthread -ldl -lm -lswiftCore -lxml2 -o Build/Foundation/libFoundation.dll -lws2_32 -lcurl -lrpcrt4
-*/
+XCTest
+--------
+python3 bui*py --swiftc /c/Work/swift_msvc/build/NinjaMinGW/swift/bin/swiftc --foundation-build-dir ../*foundation --release --module-install-path /c/Work/swift_msvc/build/NinjaMinGW/swift/lib/swift/mingw/x86_64 --library-install-path /c/Work/swift_msvc/build/NinjaMinGW/swift/lib/swift/mingw
 
-ar rcs -o libfound.a ${CF_OBJS} ${SWF_OBJS}
-
-/c/tool/gen_def libfound.a libFoundation.def
-
-clang --target=x86_64-windows-gnu  -L/c/Work/swift_msvc/build/NinjaMinGW/swift/lib/swift/mingw  -Lbootstrap/x86_64-windows-gnu/usr/lib  libFoundation.def libfound.a -shared  -lswiftMinGwCrt `icu-config --ldflags` -Wl,-defsym,__CFConstantStringClassReference=_T010Foundation19_NSCFConstantStringCN,--allow-multiple-definition -lpthread -ldl -lm -lswiftCore -lxml2 -o Build/Foundation/libFoundation.dll -lws2_32 -lcurl -lrpcrt4
 

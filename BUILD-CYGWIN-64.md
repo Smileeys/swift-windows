@@ -3,20 +3,21 @@ Install cygwin64 2.9.0
 ----------------------
 ```
  Devel/automake           10-1
-      /clang              4.0.1-1 
+      /binutils           2.25-4  (not worked with 2.28-3, 2.29-1)
+      /clang              5.0.1-1
       /cmake              3.6.2-1
-      /gcc-core           6.4.0-1
-      /gcc-g++            6.4.0-1
-      /git                2.14.2-2
+      /gcc-core           6.4.0-5
+      /gcc-g++            6.4.0-5
+      /git                2.15.1-1
       /pkg-config         0.29.1-1
       /swig               3.0.12-1
-  Libs/libcurl-devel      7.55.1-1
+  Libs/libcurl-devel      7.56.1-1
       /libedit-devel      20130712-1
       /libiconv-devel     1.14-3
-      /libicu-devel       58.2-1
-      /libncurses-devel   6.0-11.20170617
-      /libsqlite3_0       3.20.1-1
-      /libstdc++6         6.4.0-1
+      /libicu-devel       60.2-1
+      /libncurses-devel   6.0-12.20171125
+      /libsqlite3_0       3.21.0-1
+      /libstdc++6         6.4.0-5
       /libuuid-devel      2.25.2-2
       /libxml2-devel      2.9.4-2
 ```
