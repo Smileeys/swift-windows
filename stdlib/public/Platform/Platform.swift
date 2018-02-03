@@ -149,7 +149,7 @@ public var stderr : UnsafeMutablePointer<FILE>! {
     return nil
   }
 }
-#elseif CYGWIN
+#elseif os(Cygwin)
 public var stdin : UnsafeMutablePointer<__FILE>! {
     get {
 		if let reent = __getreent() {
