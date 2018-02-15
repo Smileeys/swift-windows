@@ -742,7 +742,7 @@ class SideTableRefCountBits : public RefCountBitsT<RefCountNotInline>
 template <typename RefCountBits>
 class RefCounts {
   std::atomic<RefCountBits> refCounts;
-#if !__LP64__ && !_GLIBCXX_LLP64
+#if !__LP64__ && !_GLIBCXX_LLP64 && !defined(_MSC_VER)
   // FIXME: hack - something somewhere is assuming a 3-word header on 32-bit
   // See also other fixmes marked "small header for 32-bit"
   uintptr_t unused SWIFT_ATTRIBUTE_UNAVAILABLE;

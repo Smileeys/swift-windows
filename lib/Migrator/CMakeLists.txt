@@ -16,7 +16,7 @@ add_custom_command(
 set(outputs)
 
 foreach(input ${datafiles})
-  if(MINGW STREQUAL "1")
+  if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     add_custom_command(
         OUTPUT "${output_dir}/${input}"
         DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${input}"
