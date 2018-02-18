@@ -15,10 +15,14 @@
 #include <cmath>
 #if defined(_WIN32)
 #include <io.h>
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #else
 #include <unistd.h>
 #endif
+#if !defined(_MSC_VER)
 #include <pthread.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -98,6 +102,41 @@ int swift::_swift_stdlib_close(int fd) {
 #endif
 }
 
+#if defined(_WIN32)
+static_assert(std::is_same<__swift_pthread_key_t, DWORD>::value,
+              "__swift_pthread_key_t is not a DWORD");
+
+SWIFT_RUNTIME_STDLIB_INTERFACE
+void _stdlib_destroyTLS(void *);
+
+static void
+#if defined(_M_IX86)
+__stdcall
+#endif
+destroyTLS_CCAdjustmentThunk(void *ptr) {
+  _stdlib_destroyTLS(ptr);
+}
+
+SWIFT_RUNTIME_STDLIB_INTERFACE
+int
+swift::_swift_stdlib_pthread_key_create(__swift_pthread_key_t * _Nonnull key,
+                              void (* _Nullable destructor)(void *)) {
+  *key = FlsAlloc(destroyTLS_CCAdjustmentThunk);
+  return *key != FLS_OUT_OF_INDEXES;
+}
+
+SWIFT_RUNTIME_STDLIB_INTERFACE
+void * _Nullable
+swift::_swift_stdlib_pthread_getspecific(__swift_pthread_key_t key) {
+  return FlsGetValue(key);
+}
+
+SWIFT_RUNTIME_STDLIB_INTERFACE
+int swift::_swift_stdlib_pthread_setspecific(__swift_pthread_key_t key,
+                                   const void * _Nullable value) {
+  return FlsSetValue(key, const_cast<void *>(value)) == TRUE;
+}
+#else
 #if defined(__CYGWIN__)
 #else
 // Guard compilation on the typedef for __swift_pthread_key_t in LibcShims.h
@@ -141,6 +180,7 @@ int swift::_swift_stdlib_pthread_setspecific(
   return pthread_setspecific(key, value);
 #endif
 }
+#endif
 
 #if defined(__APPLE__)
 #include <malloc/malloc.h>

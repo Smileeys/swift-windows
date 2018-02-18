@@ -76,6 +76,8 @@ static bool getSymbolNameAddr(llvm::StringRef libraryName, SymbolInfo syminfo,
   // demangle with swift. We are taking advantage of __cxa_demangle actually
   // providing failure status instead of just returning the original string like
   // swift demangle.
+#if defined(_WIN32)
+#else
   int status;
   char *demangled = abi::__cxa_demangle(syminfo.symbolName, 0, 0, &status);
   if (status == 0) {
@@ -87,6 +89,7 @@ static bool getSymbolNameAddr(llvm::StringRef libraryName, SymbolInfo syminfo,
   }
   assert(demangled == nullptr && "If __cxa_demangle fails, demangled should "
                                  "be a nullptr");
+#endif
 
   // Otherwise, try to demangle with swift. If swift fails to demangle, it will
   // just pass through the original output.
