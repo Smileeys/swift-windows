@@ -396,7 +396,7 @@ IRGenModule::IRGenModule(IRGenerator &irgen,
     clang::CodeGen::swiftcall::isSwiftErrorLoweredInRegister(
       ClangCodeGen->CGM());
 
-  if (Triple.isOSCygMing())
+  if (Triple.isOSWindows())
     IsSwiftErrorInRegister = false;
 }
 
