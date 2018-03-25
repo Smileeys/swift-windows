@@ -122,6 +122,24 @@ destroyTLS_CCAdjustmentThunk(void *ptr) {
   _stdlib_destroyTLS(ptr);
 }
 
+typedef uint64_t ti_int;
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __udivti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __umodti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __divti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __modti3(ti_int a, ti_int b) {
+  return 0;
+}
+
 SWIFT_RUNTIME_STDLIB_INTERFACE
 int
 swift::_swift_stdlib_pthread_key_create(__swift_pthread_key_t * _Nonnull key,
