@@ -106,8 +106,13 @@ int swift::_swift_stdlib_close(int fd) {
 static_assert(std::is_same<__swift_pthread_key_t, DWORD>::value,
               "__swift_pthread_key_t is not a DWORD");
 
+// FIXME: silgen_name didn't work for _stdlib_destroyTLS.
 SWIFT_RUNTIME_STDLIB_INTERFACE
-void _stdlib_destroyTLS(void *);
+void _T0s11_destroyTLSySvSgFTo(void *);
+SWIFT_RUNTIME_STDLIB_INTERFACE
+void _stdlib_destroyTLS(void *ptr) {
+  _T0s11_destroyTLSySvSgFTo(ptr);	
+}
 
 static void
 #if defined(_M_IX86)
