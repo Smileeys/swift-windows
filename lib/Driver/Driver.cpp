@@ -1083,7 +1083,7 @@ void Driver::buildOutputInfo(const ToolChain &TC, const DerivedArgList &Args,
       Args.hasArg(options::OPT_static_stdlib)) {
     _putenv("_USE_DLLSTORAGE=0");
   } else {
-    _putenv("_USE_DLLSTORAGE=1");
+//    _putenv("_USE_DLLSTORAGE=1");
   }
 #else
   if (OI.CompilerMode == OutputInfo::Mode::Immediate ||
