@@ -45,7 +45,7 @@ extension String {
 /// The following example creates a `greeting` string, and then finds the
 /// substring of the first sentence:
 ///
-///     let greeting = "Hi there! It's nice to meet you! 👋"
+///     let greeting = "Hi there! It's nice to meet you! "
 ///     let endOfSentence = greeting.index(of: "!")!
 ///     let firstSentence = greeting[...endOfSentence]
 ///     // firstSentence == "Hi there!"

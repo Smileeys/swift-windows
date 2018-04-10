@@ -415,6 +415,9 @@ IRGenModule::IRGenModule(IRGenerator &irgen,
   IsSwiftErrorInRegister =
     clang::CodeGen::swiftcall::isSwiftErrorLoweredInRegister(
       ClangCodeGen->CGM());
+
+  if (Triple.isOSWindows())
+    IsSwiftErrorInRegister = false;
 }
 
 IRGenModule::~IRGenModule() {
@@ -439,6 +442,9 @@ namespace RuntimeConstants {
   const auto ZExt = llvm::Attribute::ZExt;
   const auto FirstParamReturned = llvm::Attribute::Returned;
 } // namespace RuntimeConstants
+
+// FIXME: temporarial patch for MSVC
+extern bool EnabledDllImport();
 
 // We don't use enough attributes to justify generalizing the
 // RuntimeFunctions.def FUNCTION macro. Instead, special case the one attribute
@@ -480,6 +486,7 @@ llvm::Constant *swift::getRuntimeFn(llvm::Module &Module,
     fn->setCallingConv(cc);
 
     if (::useDllStorage(llvm::Triple(Module.getTargetTriple())) &&
+        EnabledDllImport() &&
         ((fn->getLinkage() == llvm::GlobalValue::ExternalLinkage &&
           fn->isDeclaration()) ||
          fn->getLinkage() == llvm::GlobalValue::AvailableExternallyLinkage))
@@ -552,7 +559,8 @@ llvm::Constant *swift::getWrapperFn(llvm::Module &Module,
     auto *globalFnPtr = new llvm::GlobalVariable(
         Module, fnPtrTy, false, llvm::GlobalValue::ExternalLinkage, nullptr,
         symbol);
-    if (::useDllStorage(llvm::Triple(Module.getTargetTriple())))
+    if (::useDllStorage(llvm::Triple(Module.getTargetTriple())) &&
+        EnabledDllImport())
       globalFnPtr->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
     // Forward all arguments.

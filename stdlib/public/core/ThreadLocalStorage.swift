@@ -132,7 +132,11 @@ internal func _destroyTLS(_ ptr: UnsafeMutableRawPointer?) {
 // Lazily created global key for use with pthread TLS
 @_versioned // FIXME(sil-serialize-all)
 internal let _tlsKey: __swift_thread_key_t = {
+#if os(Cygwin)
+  let sentinelValue = __swift_thread_key_t.min
+#else
   let sentinelValue = __swift_thread_key_t.max
+#endif
   var key: __swift_thread_key_t = sentinelValue
   let success = _stdlib_thread_key_create(&key, _destroyTLS)
   _sanityCheck(success == 0, "somehow failed to create TLS key")

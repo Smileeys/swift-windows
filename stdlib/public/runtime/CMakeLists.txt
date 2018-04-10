@@ -21,6 +21,11 @@ endif()
 list(APPEND swift_runtime_compile_flags
      "-D__SWIFT_CURRENT_DYLIB=swiftCore")
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "CYGWIN" OR "${MINGW}" STREQUAL "1")
+  list(APPEND swift_runtime_compile_flags
+       "-mcx16")
+endif()
+
 set(swift_runtime_objc_sources
     ErrorObject.mm
     SwiftObject.mm
@@ -138,6 +143,10 @@ foreach(sdk ${SWIFT_CONFIGURED_SDKS})
   endif()
 endforeach()
 
+# Windows including MinGW does not need the begin, end sections.
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+elseif ("${CMAKE_SYSTEM_NAME}" STREQUAL "CYGWIN")
+else()
 add_swift_library(swiftImageRegistrationObject
                   OBJECT_LIBRARY IS_STDLIB IS_STDLIB_CORE
                   SwiftRT-ELF.cpp
@@ -145,6 +154,7 @@ add_swift_library(swiftImageRegistrationObject
                   LINK_FLAGS ${SWIFT_RUNTIME_CORE_LINK_FLAGS}
                   TARGET_SDKS ${ELFISH_SDKS}
                   INSTALL_IN_COMPONENT none)
+endif()
 
 foreach(sdk ${SWIFT_CONFIGURED_SDKS})
   foreach(arch ${SWIFT_SDK_${sdk}_ARCHITECTURES})

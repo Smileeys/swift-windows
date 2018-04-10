@@ -36,9 +36,9 @@ namespace swift { extern "C" {
 #if defined(__linux__) && defined (__arm__)
 typedef           int __swift_ssize_t;
 #elif defined(_WIN32)
-#if defined(_M_ARM) || defined(_M_IX86)
+#if defined(_M_ARM) || defined(_M_IX86) ||  defined(__i386__)
 typedef           int __swift_ssize_t;
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(__x86_64__)
 typedef long long int __swift_ssize_t;
 #else
 #error unsupported machine type
@@ -189,6 +189,8 @@ typedef int __swift_thread_key_t;
 typedef unsigned long __swift_thread_key_t;
 #elif defined(__HAIKU__)
 typedef int __swift_thread_key_t;
+#elif defined(__CYGWIN__)
+typedef uintptr_t __swift_thread_key_t;
 #else
 typedef unsigned long __swift_thread_key_t;
 #endif

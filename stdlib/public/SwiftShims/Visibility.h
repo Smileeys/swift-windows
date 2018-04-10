@@ -92,7 +92,7 @@
 #endif
 
 #else  // FIXME: this #else should be some sort of #elif Windows
-# if defined(__CYGWIN__)
+# if defined(__CYGWIN__) || __MINGW32__
 #  define SWIFT_EXPORT_ATTRIBUTE
 # else
 #  if defined(swiftCore_EXPORTS)

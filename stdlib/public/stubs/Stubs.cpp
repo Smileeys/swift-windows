@@ -41,9 +41,34 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if defined(__CYGWIN__) || defined(_WIN32) || defined(__HAIKU__)
+#if defined(__CYGWIN__) || defined(__HAIKU__)
+#include <iostream>
 #include <sstream>
 #include <cmath>
+#define fmodl(lhs, rhs) std::fmod(lhs, rhs)
+#elif defined(_WIN32)
+#include <iostream>
+#include <sstream>
+#include <cmath>
+#define fmodl(lhs, rhs) std::fmod(lhs, rhs)
+#include <locale.h>
+typedef _locale_t locale_t;
+#define strtod_l _strtod_l
+#if defined(_MSC_VER)
+#define strtof_l _strtof_l
+#define strtold_l _strtold_l
+#elif defined(__MINGW32__)
+static float swift_strtof_l(const char *nptr, char **endptr, locale_t loc) {
+  return _strtod_l(nptr, endptr, loc);
+}
+static long double swift_strtold_l(const char *nptr,
+                                   char **endptr,
+                                   locale_t loc) {
+  return _strtod_l(nptr, endptr, loc);
+}
+#define strtof_l swift_strtof_l
+#define strtold_l swift_strtold_l
+#endif
 #elif defined(__ANDROID__)
 // Android's libc implementation Bionic currently only supports the "C" locale
 // (https://android.googlesource.com/platform/bionic/+/ndk-r11c/libc/bionic/locale.cpp#40).
@@ -151,8 +176,32 @@ static inline locale_t getCLocale() {
   // as C locale.
   return nullptr;
 }
-#elif defined(__CYGWIN__) || defined(_WIN32) || defined(__HAIKU__)
+#elif defined(__CYGWIN__) || defined(__HAIKU__)
 // In Cygwin, getCLocale() is not used.
+#elif defined(_WIN32)
+typedef _locale_t (*CreateLocaleFuncPtr)(int category, const char *locale);
+static locale_t makeCLocale() {
+
+  _locale_t CLocale = NULL;
+  // On Windows 7 MinGW environment, _create_locale() function may not be exist.
+  // We dynamically link the function only if it exist.
+  HMODULE handle = GetModuleHandleA("msvcrt.dll");
+  if (handle != NULL) {
+    CreateLocaleFuncPtr CreateLocaleFunc = (CreateLocaleFuncPtr) GetProcAddress(handle, "_create_locale");
+    if (CreateLocaleFunc != NULL) {
+      CLocale = CreateLocaleFunc(LC_ALL, "C");
+      if (!CLocale) {
+        swift::crash("makeCLocale: _create_locale() returned a null pointer");
+      }
+    }
+  }
+	
+  return CLocale;
+}
+
+static locale_t getCLocale() {
+  return SWIFT_LAZY_CONSTANT(makeCLocale());
+}
 #else
 static locale_t makeCLocale() {
   locale_t CLocale = newlocale(LC_ALL_MASK, "C", nullptr);
@@ -437,7 +486,7 @@ __mulodi4(di_int a, di_int b, int* overflow)
 }
 #endif
 
-#if defined(__CYGWIN__) || defined(_WIN32)
+#if defined(_WIN32)
   #define strcasecmp _stricmp
 #endif
 
@@ -449,7 +498,7 @@ static bool swift_stringIsSignalingNaN(const char *nptr) {
   return strcasecmp(nptr, "snan") == 0;
 }
 
-#if defined(__CYGWIN__) || defined(_WIN32) || defined(__HAIKU__)
+#if defined(__CYGWIN__) || defined(__HAIKU__)
 // Cygwin does not support uselocale(), but we can use the locale feature 
 // in stringstream object.
 template <typename T>

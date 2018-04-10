@@ -27,6 +27,9 @@
 #include <semaphore.h>
 #include <sys/ioctl.h>
 #endif
+#if !defined(_MSC_VER)
+#include <pthread.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -232,6 +235,24 @@ destroyTLS_CCAdjustmentThunk(void *ptr) {
   _stdlib_destroyTLS(ptr);
 }
 
+typedef uint64_t ti_int;
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __udivti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __umodti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __divti3(ti_int a, ti_int b) {
+  return 0;
+}
+SWIFT_RUNTIME_STDLIB_INTERFACE
+ti_int __modti3(ti_int a, ti_int b) {
+  return 0;
+}
+
 SWIFT_RUNTIME_STDLIB_INTERFACE
 int
 swift::_stdlib_thread_key_create(__swift_thread_key_t * _Nonnull key,
@@ -252,30 +273,45 @@ int swift::_stdlib_thread_setspecific(__swift_thread_key_t key,
   return FlsSetValue(key, const_cast<void *>(value)) == TRUE;
 }
 #else
+#if defined(__CYGWIN__)
+#else
 // Guard compilation on the typedef for __swift_thread_key_t in LibcShims.h
 // being identical to the platform's pthread_key_t
 static_assert(std::is_same<__swift_thread_key_t, pthread_key_t>::value,
               "This platform's pthread_key_t differs. If you hit this assert, "
               "fix __swift_pthread_key_t's typedef in LibcShims.h by adding an "
               "#if guard and definition for your platform");
+#endif
 
 SWIFT_RUNTIME_STDLIB_INTERFACE
 int
 swift::_stdlib_thread_key_create(__swift_thread_key_t * _Nonnull key,
                               void (* _Nullable destructor)(void *)) {
+#if defined(__CYGWIN__)
+  return pthread_key_create(reinterpret_cast<pthread_key_t *>(key), destructor);
+#else
   return pthread_key_create(key, destructor);
+#endif
 }
 
 SWIFT_RUNTIME_STDLIB_INTERFACE
 void * _Nullable
 swift::_stdlib_thread_getspecific(__swift_thread_key_t key) {
+#if defined(__CYGWIN__)
+  return pthread_getspecific(reinterpret_cast<pthread_key_t>(key));
+#else
   return pthread_getspecific(key);
+#endif
 }
 
 SWIFT_RUNTIME_STDLIB_INTERFACE
 int swift::_stdlib_thread_setspecific(__swift_thread_key_t key,
                                       const void * _Nullable value) {
+#if defined(__CYGWIN__)
+  return pthread_setspecific(reinterpret_cast<pthread_key_t>(key), value);
+#else
   return pthread_setspecific(key, value);
+#endif
 }
 #endif
 

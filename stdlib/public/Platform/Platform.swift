@@ -118,7 +118,76 @@ public var stderr : UnsafeMutablePointer<FILE> {
     __stderrp = newValue
   }
 }
+#elseif MINGW
+public var stdin : UnsafeMutablePointer<FILE>! {
+  get {
+    if let iob_fn = __iob_func() {
+      return iob_fn
+    }
+    return nil
+  }
+}
 
+public var stdout : UnsafeMutablePointer<FILE>! {
+  get {
+    if let iob_fn = __iob_func() {
+      return iob_fn + 1
+    }
+    return nil
+  }
+}
+
+public var stderr : UnsafeMutablePointer<FILE>! {
+  get {
+    if let iob_fn = __iob_func() {
+      return iob_fn + 2
+    }
+    return nil
+  }
+}
+#elseif os(Cygwin)
+public var stdin : UnsafeMutablePointer<__FILE>! {
+    get {
+		if let reent = __getreent() {
+		    return reent.pointee._stdin
+		}
+		return nil
+	}
+	set {
+		if let reent = __getreent() {
+		    reent.pointee._stdin = newValue
+		}
+	}
+}
+public var stdout : UnsafeMutablePointer<__FILE>! {
+    get {
+		if let reent = __getreent() {
+		    return reent.pointee._stdout
+		}
+		return nil
+	}
+	set {
+		if let reent = __getreent() {
+		    reent.pointee._stdout = newValue
+		}
+	}
+}
+public var stderr : UnsafeMutablePointer<__FILE>! {
+    get {
+		if let reent = __getreent() {
+		    return reent.pointee._stderr
+		}
+		return nil
+	}
+	set {
+		if let reent = __getreent() {
+		    reent.pointee._stderr = newValue
+		}
+	}
+}
+#endif
+
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS) || os(FreeBSD) || os(PS4)
 public func dprintf(_ fd: Int, _ format: UnsafePointer<Int8>, _ args: CVarArg...) -> Int32 {
   return withVaList(args) { va_args in
     vdprintf(Int32(fd), format, va_args)
@@ -339,6 +408,17 @@ public var SIG_HOLD: sighandler_t {
   return unsafeBitCast(2, to: sighandler_t.self)
 }
 #elseif os(Windows)
+#if MINGW
+public typealias sighandler_t = __p_sig_fn_t
+
+public var SIG_DFL: sighandler_t? { return nil }
+public var SIG_IGN: sighandler_t {
+  return unsafeBitCast(1, to: sighandler_t.self)
+}
+public var SIG_ERR: sighandler_t {
+  return unsafeBitCast(-1, to: sighandler_t.self)
+}
+#else
 public var SIG_DFL: _crt_signal_t? { return nil }
 public var SIG_IGN: _crt_signal_t {
   return unsafeBitCast(1, to: _crt_signal_t.self)
@@ -346,6 +426,7 @@ public var SIG_IGN: _crt_signal_t {
 public var SIG_ERR: _crt_signal_t {
   return unsafeBitCast(-1, to: _crt_signal_t.self)
 }
+#endif
 #else
 internal var _ignore = _UnsupportedPlatformError()
 #endif

@@ -365,7 +365,10 @@ extension Double : _CVarArgPassedAsDouble, _CVarArgAligned {
   }
 }
 
-#if arch(x86_64) || arch(s390x)
+// On the 64bit Windows, the va_list structure is similar to the one defined
+// in the 32bit architecture, and is different to the va_liast defined in the
+// System V ABI for x86_64 architecture.
+#if (arch(x86_64) && !os(Windows)) || arch(s390x)
 
 /// An object that can manage the lifetime of storage backing a
 /// `CVaListPointer`.

@@ -12,8 +12,12 @@
 
 #if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
 import Darwin
-#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android) || os(Cygwin) || os(Haiku)
+#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android) || os(Haiku)
 import Glibc
+#elseif os(Cygwin)
+import Newlib
+#elseif MINGW
+import MinGWCrt
 #endif
 
 //

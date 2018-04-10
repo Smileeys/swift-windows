@@ -1673,6 +1673,16 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
   else if (staticStdlib) {
     Arguments.push_back(context.Args.MakeArgString(StaticRuntimeLibPath));
 
+#if defined(__CYGWIN__)
+    Arguments.push_back("-Xlinker");
+    Arguments.push_back("--allow-multiple-definition");
+    Arguments.push_back("-lswiftCore");
+    Arguments.push_back("-lpsapi");    
+
+    Arguments.push_back("-Xlinker");
+    Arguments.push_back("--export-all-symbols");
+#endif
+
     SmallString<128> linkFilePath = StaticRuntimeLibPath;
     llvm::sys::path::append(linkFilePath, "static-stdlib-args.lnk");
     auto linkFile = linkFilePath.str();
@@ -1725,7 +1735,13 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
 
   // This should be the last option, for convenience in checking output.
   Arguments.push_back("-o");
-  Arguments.push_back(context.Output.getPrimaryOutputFilename().c_str());
+//FIXME: Change this macro condition to the runtime logic
+  auto OutputExeFilename = context.Output.getPrimaryOutputFilename();
+#if defined(__MINGW32__)
+  if (OutputExeFilename.find(".") == std::string::npos)
+    OutputExeFilename = OutputExeFilename + ".exe";
+#endif
+  Arguments.push_back(context.Args.MakeArgString(OutputExeFilename));
 
   return {Clang, Arguments};
 }
@@ -1755,3 +1771,102 @@ std::string toolchains::Cygwin::getTargetForLinker() const {
   return "";
 }
 
+std::string toolchains::Cygwin::getPreInputObjectPath(
+    StringRef RuntimeLibraryPath) const {
+  // Cygwin does not add "begin" and "end" objects.
+  return "";
+}
+
+std::string toolchains::Cygwin::getPostInputObjectPath(
+    StringRef RuntimeLibraryPath) const {
+  // Cygwin does not add "begin" and "end" objects.
+  return "";
+}
+
+ToolChain::InvocationInfo
+toolchains::Windows::constructInvocation(const InterpretJobAction &job,
+                                        const JobContext &context) const {
+  InvocationInfo II = ToolChain::constructInvocation(job, context);
+  return II;
+}
+
+ToolChain::InvocationInfo
+toolchains::Windows::constructInvocation(const LinkJobAction &job,
+                                             const JobContext &context) const {
+  assert(context.Output.getPrimaryOutputType() == types::TY_Image &&
+         "Invalid linker output type.");
+
+  ArgStringList Arguments;
+
+  switch (job.getKind()) {
+  case LinkKind::None:
+    llvm_unreachable("invalid link kind");
+  case LinkKind::Executable:
+    // Default case, nothing extra needed
+    break;
+  case LinkKind::DynamicLibrary:
+    Arguments.push_back("-shared");
+    break;
+  }
+
+  // Select the linker to use
+  std::string Linker;
+  if (const Arg *A = context.Args.getLastArg(options::OPT_use_ld)) {
+    Linker = A->getValue();
+  } else {
+    Linker = "";
+  }
+
+  // Add the runtime library link path, which is platform-specific and found
+  // relative to the compiler.
+  llvm::SmallString<128> RuntimeLibPath;
+  getRuntimeLibraryPath(RuntimeLibPath, context.Args, *this);
+
+  addPrimaryInputsOfType(Arguments, context.Inputs, types::TY_Object);
+  addInputsOfType(Arguments, context.InputActions, types::TY_Object);
+
+  context.Args.AddAllArgs(Arguments, options::OPT_Xlinker);
+  context.Args.AddAllArgs(Arguments, options::OPT_linker_option_Group);
+  context.Args.AddAllArgs(Arguments, options::OPT_F);
+
+  //FIXME: Patch for Cygwin, '-lswiftSwiftOnoneSupport' will be removed if 
+  //SR-1128 autolink-extraction is fixed.
+//  Arguments.push_back("-llibswiftSwiftOnoneSupport");
+
+  // Link the standard library.
+  llvm::SmallString<128> LibPathFlag("-Wl,/LIBPATH:");
+  if (context.Args.hasFlag(options::OPT_static_stdlib,
+                            options::OPT_no_static_stdlib,
+                            false)) {
+    SmallString<128> StaticRuntimeLibPath;
+    getRuntimeStaticLibraryPath(StaticRuntimeLibPath, context.Args, *this);
+    Arguments.push_back(context.Args.MakeArgString(LibPathFlag + StaticRuntimeLibPath));
+
+    llvm::SmallString<128> StaticLibFlag("-Wl,/MERGE:.rdata=.rodata,"
+                                         "/FORCE:MULTIPLE,"
+                                         "/NODEFAULTLIB:libcmt,msvcrt.lib");
+    Arguments.push_back(context.Args.MakeArgString(StaticLibFlag));
+
+    Arguments.push_back("-Xlinker");
+    Arguments.push_back("/IGNORE:4006,4049,4217");
+  }
+  else {
+    Arguments.push_back(context.Args.MakeArgString(LibPathFlag + RuntimeLibPath));
+  }
+
+  // Disable creation of import library
+  Arguments.push_back("-Xlinker");
+  Arguments.push_back("/NOIMPLIB");
+
+  // Always add the stdlib
+  Arguments.push_back("-llibswiftCore");
+
+  // This should be the last option, for convenience in checking output.
+  Arguments.push_back("-o");
+  auto OutputExeFilename = context.Output.getPrimaryOutputFilename();
+  if (OutputExeFilename.find(".") == std::string::npos)
+    OutputExeFilename = OutputExeFilename + ".exe";
+  Arguments.push_back(context.Args.MakeArgString(OutputExeFilename));
+
+  return {"clang++", Arguments};
+}

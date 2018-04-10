@@ -28,7 +28,11 @@ public typealias CUnsignedShort = UInt16
 public typealias CUnsignedInt = UInt32
 
 /// The C 'unsigned long' type.
+#if os(Windows) && arch(x86_64)
+public typealias CUnsignedLong = UInt32
+#else
 public typealias CUnsignedLong = UInt
+#endif
 
 /// The C 'unsigned long long' type.
 public typealias CUnsignedLongLong = UInt64
@@ -50,13 +54,8 @@ public typealias CLong = Int32
 public typealias CLong = Int
 #endif
 
-#if os(Windows) && arch(x86_64)
-/// The C 'long long' type.
-public typealias CLongLong = Int
-#else
 /// The C 'long long' type.
 public typealias CLongLong = Int64
-#endif
 
 /// The C 'float' type.
 public typealias CFloat = Float

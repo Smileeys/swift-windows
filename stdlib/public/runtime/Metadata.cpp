@@ -2839,9 +2839,26 @@ namespace {
 // A statically-allocated pool.  It's zero-initialized, so this
 // doesn't cost us anything in binary size.
 LLVM_ALIGNAS(alignof(void*)) static char InitialAllocationPool[64*1024];
-static std::atomic<PoolRange>
-AllocationPool{PoolRange{InitialAllocationPool,
-                         sizeof(InitialAllocationPool)}};
+static PoolRange
+AllocationPool = PoolRange{InitialAllocationPool,
+                         sizeof(InitialAllocationPool)};
+                         
+static std::mutex pool_mtx;
+PoolRange AllocationPoolLoad() {
+  pool_mtx.lock();
+  auto pool = AllocationPool;
+  pool_mtx.unlock();
+  return pool;
+}
+
+bool CompExchangeAllocationPool(const PoolRange *current, const PoolRange &next) {
+  pool_mtx.lock();
+  bool was_same = (memcmp(current, &AllocationPool, sizeof(PoolRange)) == 0);
+  if (was_same)
+    AllocationPool = next;
+  pool_mtx.unlock();
+  return was_same;
+}           
 
 void *MetadataAllocator::Allocate(size_t size, size_t alignment) {
   assert(alignment <= alignof(void*));
@@ -2852,7 +2869,7 @@ void *MetadataAllocator::Allocate(size_t size, size_t alignment) {
     return malloc(size);
 
   // Allocate out of the pool.
-  PoolRange curState = AllocationPool.load(std::memory_order_relaxed);
+  PoolRange curState = AllocationPoolLoad();
   while (true) {
     char *allocation;
     PoolRange newState;
@@ -2871,10 +2888,7 @@ void *MetadataAllocator::Allocate(size_t size, size_t alignment) {
     }
 
     // Swap in the new state.
-    if (std::atomic_compare_exchange_weak_explicit(&AllocationPool,
-                                                   &curState, newState,
-                                              std::memory_order_relaxed,
-                                              std::memory_order_relaxed)) {
+    if (CompExchangeAllocationPool(&curState, newState)) {
       // If that succeeded, we've successfully allocated.
       __msan_allocated_memory(allocation, size);
       __asan_unpoison_memory_region(allocation, size);
@@ -2898,7 +2912,7 @@ void MetadataAllocator::Deallocate(const void *allocation, size_t size) {
 
   // Check whether the allocation pool is still in the state it was in
   // immediately after the given allocation.
-  PoolRange curState = AllocationPool.load(std::memory_order_relaxed);
+  PoolRange curState = AllocationPoolLoad();
   if (reinterpret_cast<const char*>(allocation) + size != curState.Begin) {
     return;
   }
@@ -2908,9 +2922,6 @@ void MetadataAllocator::Deallocate(const void *allocation, size_t size) {
   PoolRange newState = { reinterpret_cast<char*>(const_cast<void*>(allocation)),
                          curState.Remaining + size };
   (void)
-    std::atomic_compare_exchange_strong_explicit(&AllocationPool,
-                                                 &curState, newState,
-                                                 std::memory_order_relaxed,
-                                                 std::memory_order_relaxed);
+    CompExchangeAllocationPool(&curState, newState);
 }
 

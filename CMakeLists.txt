@@ -362,6 +362,13 @@ if(SWIFT_BUILT_STANDALONE)
   project(Swift C CXX ASM)
 endif()
 
+# In Cygwin, we should use the new poclicy for CMP0054 to compare the variable 
+# CMAKE_SYSTEM_NAME with string properly.
+# The boolean variable CYGWIN can be used after calling 'project()'.
+if(CYGWIN AND POLICY CMP0054)
+  cmake_policy(SET CMP0054 NEW)
+endif()
+
 precondition(CMAKE_SYSTEM_NAME)
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(SWIFT_BUILD_SOURCEKIT_default TRUE)
@@ -528,7 +535,11 @@ else()
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "CYGWIN")
     set(SWIFT_HOST_VARIANT_SDK_default "CYGWIN")
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-    set(SWIFT_HOST_VARIANT_SDK_default "WINDOWS")
+    if("${MINGW}" STREQUAL "1")
+      set(SWIFT_HOST_VARIANT_SDK_default "MINGW")
+    else()
+      set(SWIFT_HOST_VARIANT_SDK_default "WINDOWS")
+    endif()
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Haiku")
     set(SWIFT_HOST_VARIANT_SDK_default "HAIKU")
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
@@ -543,6 +554,8 @@ if(SWIFT_HOST_VARIANT_ARCH)
   set(SWIFT_HOST_VARIANT_ARCH_default, "${SWIFT_HOST_VARIANT_ARCH}")
 else()
   if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+    set(SWIFT_HOST_VARIANT_ARCH_default "x86_64")
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
     set(SWIFT_HOST_VARIANT_ARCH_default "x86_64")
   elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
     set(SWIFT_HOST_VARIANT_ARCH_default "aarch64")
@@ -671,6 +684,17 @@ elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "WINDOWS")
   configure_sdk_windows(WINDOWS "Windows" "msvc" "${SWIFT_HOST_VARIANT_ARCH}")
   set(SWIFT_PRIMARY_VARIANT_SDK_default  "${SWIFT_HOST_VARIANT_SDK}")
   set(SWIFT_PRIMARY_VARIANT_ARCH_default "${SWIFT_HOST_VARIANT_ARCH}")
+
+elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "MINGW")
+
+  set(SWIFT_SDK_MINGW_OBJECT_FORMAT "COFF")
+
+  set(SWIFT_HOST_VARIANT "mingw" CACHE STRING
+      "Deployment OS for Swift host tools (the compiler) [mingw].")
+  
+  configure_sdk_unix(MINGW "Mingw" "mingw" "mingw" "x86_64" "x86_64-pc-windows-gnu" "/")
+  set(SWIFT_PRIMARY_VARIANT_SDK_default "${SWIFT_HOST_VARIANT_SDK}")
+  set(SWIFT_PRIMARY_VARIANT_ARCH_default "x86_64")
 
 elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "HAIKU")
 

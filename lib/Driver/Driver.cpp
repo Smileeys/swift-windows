@@ -1075,6 +1075,22 @@ void Driver::buildOutputInfo(const ToolChain &TC, const DerivedArgList &Args,
     }
   }
 
+#if defined(_MSC_VER)
+  if (OI.CompilerMode == OutputInfo::Mode::Immediate ||
+      Args.hasArg(options::OPT_static_stdlib)) {
+    _putenv("_USE_DLLSTORAGE=0");
+  } else {
+//    _putenv("_USE_DLLSTORAGE=1");
+  }
+#else
+  if (OI.CompilerMode == OutputInfo::Mode::Immediate ||
+      Args.hasArg(options::OPT_static_stdlib)) {
+    putenv("_USE_DLLSTORAGE=0");
+  } else {
+    putenv("_USE_DLLSTORAGE=1");
+  }
+#endif
+
   const Arg *const OutputModeArg = Args.getLastArg(options::OPT_modes_Group);
 
   if (!OutputModeArg) {
@@ -2437,3 +2453,49 @@ void Driver::printHelp(bool ShowHidden) const {
   getOpts().PrintHelp(llvm::outs(), Name.c_str(), "Swift compiler",
                       IncludedFlagsBitmask, ExcludedFlagsBitmask);
 }
+
+#if 0
+static llvm::Triple computeTargetTriple(StringRef DefaultTargetTriple) {
+  return llvm::Triple(DefaultTargetTriple); 
+}
+
+const ToolChain *Driver::getToolChain(const ArgList &Args) const {
+  llvm::Triple Target = computeTargetTriple(DefaultTargetTriple);
+
+  ToolChain *&TC = ToolChains[Target.str()];
+  if (!TC) {
+    switch (Target.getOS()) {
+    case llvm::Triple::Darwin:
+    case llvm::Triple::MacOSX:
+    case llvm::Triple::IOS:
+    case llvm::Triple::TvOS:
+    case llvm::Triple::WatchOS:
+      TC = new toolchains::Darwin(*this, Target);
+      break;
+    case llvm::Triple::Linux:
+      if (Target.isAndroid()) {
+        TC = new toolchains::Android(*this, Target);
+      } else {
+        TC = new toolchains::GenericUnix(*this, Target);
+      }
+      break;
+    case llvm::Triple::FreeBSD:
+      TC = new toolchains::GenericUnix(*this, Target);
+      break;
+    case llvm::Triple::Win32:
+      if (Target.isKnownWindowsMSVCEnvironment())
+        TC = new toolchains::Windows(*this, Target);
+      else if (Target.isWindowsCygwinEnvironment())
+        TC = new toolchains::Cygwin(*this, Target);
+      else if (Target.isWindowsGNUEnvironment())
+        TC = new toolchains::Cygwin(*this, Target);
+      else
+        TC = nullptr;
+      break;
+    default:
+      TC = nullptr;
+    }
+  }
+  return TC;
+}
+#endif

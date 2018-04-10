@@ -1,3 +1,7 @@
+if(POLICY CMP0046)
+  cmake_policy(SET CMP0046 OLD)
+endif()
+
 include(SwiftList)
 include(SwiftXcodeSupport)
 include(SwiftWindowsSupport)
@@ -360,6 +364,8 @@ function(_add_variant_link_flags)
     endif()
     swift_windows_lib_for_arch(${LFLAGS_ARCH} ${LFLAGS_ARCH}_LIB)
     list(APPEND library_search_directories ${${LFLAGS_ARCH}_LIB})
+  elseif("${LFLAGS_SDK}" STREQUAL "MINGW")
+    list(APPEND result "-lpthread")
   elseif("${LFLAGS_SDK}" STREQUAL "HAIKU")
     list(APPEND result "-lbsd" "-latomic" "-Wl,-Bsymbolic")
   elseif("${LFLAGS_SDK}" STREQUAL "ANDROID")
@@ -921,6 +927,10 @@ function(_add_swift_library_single target name)
     set_target_properties("${target}"
       PROPERTIES
       INSTALL_RPATH "$ORIGIN:/usr/lib/swift/cygwin")
+  elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set_target_properties("${target}"
+      PROPERTIES
+      INSTALL_RPATH "$ORIGIN:/usr/lib/swift/windows")
   endif()
 
   set_target_properties("${target}" PROPERTIES BUILD_WITH_INSTALL_RPATH YES)
@@ -1137,7 +1147,7 @@ function(_add_swift_library_single target name)
   # Convert variables to space-separated strings.
   _list_escape_for_shell("${c_compile_flags}" c_compile_flags)
   _list_escape_for_shell("${link_flags}" link_flags)
-
+  message("target = ${target}")
   # Set compilation and link flags.
   set_property(TARGET "${target}" APPEND_STRING PROPERTY
       COMPILE_FLAGS " ${c_compile_flags}")
@@ -1278,6 +1288,9 @@ endfunction()
 # SWIFT_MODULE_DEPENDS_CYGWIN
 #   Swift modules this library depends on when built for Cygwin.
 #
+# SWIFT_MODULE_DEPENDS_MINGW
+#   Swift modules this library depends on when built for MinGW.
+#
 # SWIFT_MODULE_DEPENDS_HAIKU
 #   Swift modules this library depends on when built for Haiku.
 #
@@ -1354,7 +1367,7 @@ function(add_swift_library name)
   cmake_parse_arguments(SWIFTLIB
     "${SWIFTLIB_options}"
     "INSTALL_IN_COMPONENT;DEPLOYMENT_VERSION_OSX;DEPLOYMENT_VERSION_IOS;DEPLOYMENT_VERSION_TVOS;DEPLOYMENT_VERSION_WATCHOS"
-    "DEPENDS;LINK_LIBRARIES;SWIFT_MODULE_DEPENDS;SWIFT_MODULE_DEPENDS_OSX;SWIFT_MODULE_DEPENDS_IOS;SWIFT_MODULE_DEPENDS_TVOS;SWIFT_MODULE_DEPENDS_WATCHOS;SWIFT_MODULE_DEPENDS_FREEBSD;SWIFT_MODULE_DEPENDS_LINUX;SWIFT_MODULE_DEPENDS_CYGWIN;SWIFT_MODULE_DEPENDS_HAIKU;FRAMEWORK_DEPENDS;FRAMEWORK_DEPENDS_WEAK;FRAMEWORK_DEPENDS_OSX;FRAMEWORK_DEPENDS_IOS_TVOS;LLVM_COMPONENT_DEPENDS;FILE_DEPENDS;TARGET_SDKS;C_COMPILE_FLAGS;SWIFT_COMPILE_FLAGS;SWIFT_COMPILE_FLAGS_OSX;SWIFT_COMPILE_FLAGS_IOS;SWIFT_COMPILE_FLAGS_TVOS;SWIFT_COMPILE_FLAGS_WATCHOS;LINK_FLAGS;PRIVATE_LINK_LIBRARIES;INTERFACE_LINK_LIBRARIES;INCORPORATE_OBJECT_LIBRARIES;INCORPORATE_OBJECT_LIBRARIES_SHARED_ONLY"
+    "DEPENDS;LINK_LIBRARIES;SWIFT_MODULE_DEPENDS;SWIFT_MODULE_DEPENDS_OSX;SWIFT_MODULE_DEPENDS_IOS;SWIFT_MODULE_DEPENDS_TVOS;SWIFT_MODULE_DEPENDS_WATCHOS;SWIFT_MODULE_DEPENDS_FREEBSD;SWIFT_MODULE_DEPENDS_LINUX;SWIFT_MODULE_DEPENDS_CYGWIN;SWIFT_MODULE_DEPENDS_MINGW;SWIFT_MODULE_DEPENDS_HAIKU;FRAMEWORK_DEPENDS;FRAMEWORK_DEPENDS_WEAK;FRAMEWORK_DEPENDS_OSX;FRAMEWORK_DEPENDS_IOS_TVOS;LLVM_COMPONENT_DEPENDS;FILE_DEPENDS;TARGET_SDKS;C_COMPILE_FLAGS;SWIFT_COMPILE_FLAGS;SWIFT_COMPILE_FLAGS_OSX;SWIFT_COMPILE_FLAGS_IOS;SWIFT_COMPILE_FLAGS_TVOS;SWIFT_COMPILE_FLAGS_WATCHOS;LINK_FLAGS;PRIVATE_LINK_LIBRARIES;INTERFACE_LINK_LIBRARIES;INCORPORATE_OBJECT_LIBRARIES;INCORPORATE_OBJECT_LIBRARIES_SHARED_ONLY"
     ${ARGN})
   set(SWIFTLIB_SOURCES ${SWIFTLIB_UNPARSED_ARGUMENTS})
 
@@ -1495,6 +1508,9 @@ function(add_swift_library name)
         elseif("${sdk}" STREQUAL "CYGWIN")
           list(APPEND swiftlib_module_depends_flattened
                ${SWIFTLIB_SWIFT_MODULE_DEPENDS_CYGWIN})
+        elseif("${sdk}" STREQUAL "MINGW")
+          list(APPEND swiftlib_module_depends_flattened
+               ${SWIFTLIB_SWIFT_MODULE_DEPENDS_MINGW})
         elseif("${sdk}" STREQUAL "HAIKU")
           list(APPEND swiftlib_module_depends_flattened
                ${SWIFTLIB_SWIFT_MODULE_DEPENDS_HAIKU})
