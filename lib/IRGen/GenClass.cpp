@@ -2121,8 +2121,6 @@ namespace {
         var->setSection(".data");
         break;
       case llvm::Triple::ELF:
-      //FIXME: what effect in COFF ?
-      case llvm::Triple::COFF:
         var->setSection(".data");
         break;
       default:

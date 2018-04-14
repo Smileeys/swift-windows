@@ -21,6 +21,13 @@
 #include <io.h>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+// FIXME: change to TlsXXX()
+extern "C" {
+  WINBASEAPI DWORD WINAPI FlsAlloc (PFLS_CALLBACK_FUNCTION lpCallback);
+  WINBASEAPI PVOID WINAPI FlsGetValue (DWORD dwFlsIndex);
+  WINBASEAPI WINBOOL WINAPI FlsSetValue (DWORD dwFlsIndex, PVOID lpFlsData);
+  WINBASEAPI WINBOOL WINAPI FlsFree (DWORD dwFlsIndex);
+}
 #else
 #include <unistd.h>
 #include <pthread.h>

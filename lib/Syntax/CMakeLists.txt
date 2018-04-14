@@ -1,5 +1,5 @@
 set(SWIFT_GYB_FLAGS
-  --line-directive "''")
+  --line-directive "\"\"")
 
 add_swift_library(swiftSyntax STATIC
   SyntaxNodes.cpp.gyb

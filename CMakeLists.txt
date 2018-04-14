@@ -687,14 +687,13 @@ elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "WINDOWS")
 
 elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "MINGW")
 
-  set(SWIFT_SDK_MINGW_OBJECT_FORMAT "COFF")
-
   set(SWIFT_HOST_VARIANT "mingw" CACHE STRING
       "Deployment OS for Swift host tools (the compiler) [mingw].")
   
   configure_sdk_unix(MINGW "Mingw" "mingw" "mingw" "x86_64" "x86_64-pc-windows-gnu" "/")
   set(SWIFT_PRIMARY_VARIANT_SDK_default "${SWIFT_HOST_VARIANT_SDK}")
   set(SWIFT_PRIMARY_VARIANT_ARCH_default "x86_64")
+  set(SWIFT_SDK_MINGW_OBJECT_FORMAT "COFF")
 
 elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "HAIKU")
 

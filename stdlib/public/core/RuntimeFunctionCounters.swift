@@ -91,13 +91,8 @@ internal func _collectAllReferencesInsideObjectImpl(
 // of runtime function counters.
 public // @testable
 struct _RuntimeFunctionCounters {
-#if os(Windows) && arch(x86_64)
-  public typealias RuntimeFunctionCountersUpdateHandler =
-    @convention(c) (_ object: UnsafeRawPointer, _ functionId: Int) -> Void
-#else
   public typealias RuntimeFunctionCountersUpdateHandler =
     @convention(c) (_ object: UnsafeRawPointer, _ functionId: Int64) -> Void
-#endif
 
   public static let runtimeFunctionNames =
     getRuntimeFunctionNames()

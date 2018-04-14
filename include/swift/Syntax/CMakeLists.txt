@@ -1,5 +1,5 @@
 set(SWIFT_GYB_FLAGS
-  --line-directive "''")
+  --line-directive "\"\"")
 
 set(generated_include_sources
     SyntaxKind.h.gyb
