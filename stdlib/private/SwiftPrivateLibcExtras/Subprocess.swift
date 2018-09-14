@@ -268,23 +268,12 @@ public enum ProcessTerminationStatus : CustomStringConvertible {
 
 public func posixWaitpid(_ pid: pid_t) -> ProcessTerminationStatus {
   var status: CInt = 0
-#if os(Cygwin)
-  withUnsafeMutablePointer(to: &status) {
-    statusPtr in
-    let statusPtrWrapper = __wait_status_ptr_t(__int_ptr: statusPtr)
-    while waitpid(pid, statusPtrWrapper, 0) < 0 {
-      if errno != EINTR {
-        preconditionFailure("waitpid() failed")
-      }
-    }
-  }
-#else
   while waitpid(pid, &status, 0) < 0 {
     if errno != EINTR {
       preconditionFailure("waitpid() failed")
     }
   }
-#endif
+
   if WIFEXITED(status) {
     return .exit(Int(WEXITSTATUS(status)))
   }
