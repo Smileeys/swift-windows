@@ -92,6 +92,14 @@ static bool shouldTransformParameter(GenericEnvironment *env,
   return (param != newParam);
 }
 
+static bool isFuncOrOptionalFuncType(SILType Ty) {
+  SILType nonOptionalType = Ty;
+  if (auto optType = Ty.getAnyOptionalObjectType()) {
+    nonOptionalType = optType;
+  }
+  return nonOptionalType.is<SILFunctionType>();
+}
+
 static bool shouldTransformFunctionType(GenericEnvironment *env,
                                         CanSILFunctionType fnType,
                                         irgen::IRGenModule &IGM) {
@@ -528,6 +536,10 @@ static bool modifiableApply(ApplySite applySite, irgen::IRGenModule &Mod) {
   // If the callee is a method then use the old ABI
   if (applySite.getSubstCalleeType()->getLanguage() == SILFunctionLanguage::C) {
     return false;
+  }
+  SILValue callee = applySite.getCallee();
+  if (auto site = ApplySite::isa(callee)) {
+    return modifiableApply(site, Mod);
   }
   return true;
 }
@@ -1712,8 +1724,7 @@ static void rewriteFunction(StructLoweringState &pass,
 
           // If the load is of a function type - do not replace it.
           auto loadedType = loadArg->getType();
-          auto canLoadedType = loadedType.getSwiftRValueType();
-          if (dyn_cast<SILFunctionType>(canLoadedType.getPointer())) {
+          if (isFuncOrOptionalFuncType(loadedType)) {
             continue;
           }
 
@@ -1756,8 +1767,7 @@ static void rewriteFunction(StructLoweringState &pass,
 
       // If the load is of a function type - do not replace it.
       auto loadedType = loadArg->getType();
-      auto canLoadedType = loadedType.getSwiftRValueType();
-      if (dyn_cast<SILFunctionType>(canLoadedType.getPointer())) {
+      if (isFuncOrOptionalFuncType(loadedType)) {
         continue;
       }
 
@@ -1788,8 +1798,7 @@ static void rewriteFunction(StructLoweringState &pass,
           } else if (auto *load = dyn_cast<LoadInst>(currOperandInstr)) {
             // If the load is of a function type - do not replace it.
             auto loadedType = load->getType();
-            auto canLoadedType = loadedType.getSwiftRValueType();
-            if (dyn_cast<SILFunctionType>(canLoadedType.getPointer())) {
+            if (isFuncOrOptionalFuncType(loadedType)) {
               continue;
             }
 
@@ -2157,7 +2166,11 @@ static SILValue
 getOperandTypeWithCastIfNecessary(SILInstruction *containingInstr, SILValue op,
                                   IRGenModule &Mod, SILBuilder &builder) {
   SILType currSILType = op->getType();
-  if (auto funcType = currSILType.getAs<SILFunctionType>()) {
+  SILType nonOptionalType = currSILType;
+  if (auto optType = currSILType.getAnyOptionalObjectType()) {
+    nonOptionalType = optType;
+  }
+  if (auto funcType = nonOptionalType.getAs<SILFunctionType>()) {
     CanSILFunctionType canFuncType = CanSILFunctionType(funcType);
     GenericEnvironment *genEnv =
         containingInstr->getFunction()->getGenericEnvironment();
@@ -2166,8 +2179,16 @@ getOperandTypeWithCastIfNecessary(SILInstruction *containingInstr, SILValue op,
     }
     auto newFnType = getNewSILFunctionType(genEnv, funcType, Mod);
     SILType newSILType = SILType::getPrimitiveObjectType(newFnType);
+    if (nonOptionalType.isAddress()) {
+      newSILType = newSILType.getAddressType();
+    }
+    if (nonOptionalType != currSILType) {
+      newSILType = SILType::getOptionalType(newSILType);
+    }
     if (currSILType.isAddress()) {
-      newSILType = newSILType.getAddressType(); // we need address for loads
+      newSILType = newSILType.getAddressType();
+    }
+    if (currSILType.isAddress()) {
       if (newSILType != currSILType) {
         auto castInstr = builder.createUncheckedAddrCast(
             containingInstr->getLoc(), op, newSILType);
