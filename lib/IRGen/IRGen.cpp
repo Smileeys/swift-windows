@@ -560,9 +560,17 @@ swift::createTargetMachine(IRGenOptions &Opts, ASTContext &Ctx) {
 
 
   // Create a target machine.
+  auto cmodel = None;
+
+  // On Cygwin 64 bit, dlls are loaded above the max address for 32 bits.
+  // This means that a default CodeModel causes generated code to segfault
+  // when run.
+  if (Triple.isArch64Bit() && Triple.isWindowsCygwinEnvironment())
+    cmodel = CodeModel::Large;
+
   llvm::TargetMachine *TargetMachine = Target->createTargetMachine(
       EffectiveTriple.str(), CPU, targetFeatures, TargetOpts, Reloc::PIC_,
-      None, OptLevel);
+      cmodel, OptLevel);
   if (!TargetMachine) {
     Ctx.Diags.diagnose(SourceLoc(), diag::no_llvm_target,
                        EffectiveTriple.str(), "no LLVM target machine");

@@ -22,6 +22,8 @@ extern "C" {
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __attribute__((__visibility__("protected")))
 # elif defined(__MACH__)
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __attribute__((__visibility__("default")))
+# elif defined(__CYGWIN__)
+#   define SWIFT_REMOTE_MIRROR_LINKAGE
 # else
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __declspec(dllexport)
 # endif
@@ -30,6 +32,8 @@ extern "C" {
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __attribute__((__visibility__("default")))
 # elif defined(__MACH__)
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __attribute__((__visibility__("default")))
+# elif defined(__CYGWIN__)
+#   define SWIFT_REMOTE_MIRROR_LINKAGE
 # else
 #   define SWIFT_REMOTE_MIRROR_LINKAGE __declspec(dllimport)
 # endif

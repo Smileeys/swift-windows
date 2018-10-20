@@ -1,5 +1,5 @@
 
-Install cygwin64 2.9.0
+Install cygwin64 2.11.0
 ----------------------
 ```
  Devel/automake           10-1
@@ -40,13 +40,6 @@ Patch gcc header
   $ ln -s x86_64-pc-cygwin i686-pc-cygwin
   
   $ touch /usr/include/c++
-```
-
- - The header file **`bits/c++config.h`** should be modified. (__float128 error)
-   http://stackoverflow.com/questions/43316533/float128-is-not-supported-on-this-target
-```
-  Edit /usr/lib/gcc/x86_64-pc-cygwin/6.4.0/include/c++/x86_64-pc-cygwin/bits/c++config.h
-  Add `#undef _GLIBCXX_USE_FLOAT128` under the line `#define _GLIBCXX_USE_FLOAT128 1`
 ```
 
 Download sources

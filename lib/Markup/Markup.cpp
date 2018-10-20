@@ -15,9 +15,6 @@
 #include "swift/AST/Comment.h"
 #include "swift/Markup/LineList.h"
 #include "swift/Markup/Markup.h"
-#if defined(__CYGWIN__)
-#define CMARK_STATIC_DEFINE
-#endif
 #include "cmark.h"
 
 using namespace swift;
