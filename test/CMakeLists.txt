@@ -65,6 +65,7 @@ function(get_test_dependencies SDK result_var_name)
      ("${SDK}" STREQUAL "FREEBSD") OR
      ("${SDK}" STREQUAL "ANDROID") OR
      ("${SDK}" STREQUAL "WINDOWS") OR
+     ("${SDK}" STREQUAL "MINGW") OR
      ("${SDK}" STREQUAL "HAIKU"))
     # No extra dependencies.
   else()
@@ -354,3 +355,6 @@ foreach(test_mode ${TEST_MODES})
         PROPERTY FOLDER "Tests/check-swift")
   endforeach()
 endforeach()
+
+set_property(TARGET swift-remoteast-test APPEND_STRING PROPERTY
+  LINK_FLAGS " -Wl,--allow-multiple-definition")

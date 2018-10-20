@@ -2342,6 +2342,9 @@ namespace {
   };
 } // end anonymous namespace
 
+// FIXME: temporarial patch for MSVC
+extern bool EnabledDllStorage();
+
 /// Emit the ObjC-compatible class symbol for a class.
 /// Since LLVM and many system linkers do not have a notion of relative symbol
 /// references, we emit the symbol as a global asm block.
@@ -2350,7 +2353,7 @@ static void emitObjCClassSymbol(IRGenModule &IGM,
                                 llvm::GlobalValue *metadata) {
   llvm::SmallString<32> classSymbol;
   LinkEntity::forObjCClass(classDecl).mangle(classSymbol);
-  
+
   // Create the alias.
   auto *metadataTy = cast<llvm::PointerType>(metadata->getType());
 
@@ -2362,7 +2365,7 @@ static void emitObjCClassSymbol(IRGenModule &IGM,
                                           IGM.getModule());
   alias->setVisibility(metadata->getVisibility());
 
-  if (IGM.useDllStorage())
+  if (IGM.useDllStorage() && EnabledDllStorage())
     alias->setDLLStorageClass(metadata->getDLLStorageClass());
 }
 
@@ -3124,13 +3127,13 @@ namespace {
 
       auto fnTy = llvm::FunctionType::get(IGM.VoidTy, {IGM.TypeMetadataPtrTy},
                                           /*variadic*/ false);
-      llvm::Function *fn = llvm::Function::Create(fnTy,
-                                           llvm::GlobalValue::PrivateLinkage,
-                                           Twine("initialize_metadata_")
-                                             + type->getDecl()->getName().str(),
-                                           &IGM.Module);
+      llvm::Function *fn = llvm::Function::Create(
+          fnTy, llvm::GlobalValue::InternalLinkage,
+          Twine("initialize_metadata_") + type->getDecl()->getName().str(),
+          &IGM.Module);
+      // FIXME: should we be setting visibility and DLL storage as well?
       fn->setAttributes(IGM.constructInitialAttributes());
-      
+
       // Set up the function.
       IRGenFunction IGF(IGM, fn);
       if (IGM.DebugInfo)

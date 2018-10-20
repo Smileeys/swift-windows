@@ -26,6 +26,11 @@ endif()
 list(APPEND swift_runtime_compile_flags
      "-D__SWIFT_CURRENT_DYLIB=swiftCore")
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "CYGWIN" OR "${MINGW}" STREQUAL "1")
+  list(APPEND swift_runtime_compile_flags
+       "-mcx16")
+endif()
+
 set(swift_runtime_objc_sources
     ErrorObject.mm
     SwiftObject.mm

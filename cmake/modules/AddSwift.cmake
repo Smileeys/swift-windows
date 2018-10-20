@@ -1,3 +1,7 @@
+if(POLICY CMP0046)
+  cmake_policy(SET CMP0046 OLD)
+endif()
+
 include(SwiftList)
 include(SwiftXcodeSupport)
 include(SwiftWindowsSupport)
@@ -396,6 +400,8 @@ function(_add_variant_link_flags)
     endif()
     swift_windows_lib_for_arch(${LFLAGS_ARCH} ${LFLAGS_ARCH}_LIB)
     list(APPEND library_search_directories ${${LFLAGS_ARCH}_LIB})
+  elseif("${LFLAGS_SDK}" STREQUAL "MINGW")
+    list(APPEND result "-lpthread")
   elseif("${LFLAGS_SDK}" STREQUAL "HAIKU")
     list(APPEND result "-lbsd" "-latomic" "-Wl,-Bsymbolic")
   elseif("${LFLAGS_SDK}" STREQUAL "ANDROID")
@@ -999,6 +1005,10 @@ function(_add_swift_library_single target name)
     set_target_properties("${target}"
       PROPERTIES
       INSTALL_RPATH "$ORIGIN:/usr/lib/swift/cygwin")
+  elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set_target_properties("${target}"
+      PROPERTIES
+      INSTALL_RPATH "$ORIGIN:/usr/lib/swift/windows")
   endif()
 
   set_target_properties("${target}" PROPERTIES BUILD_WITH_INSTALL_RPATH YES)
@@ -1215,7 +1225,7 @@ function(_add_swift_library_single target name)
   # Convert variables to space-separated strings.
   _list_escape_for_shell("${c_compile_flags}" c_compile_flags)
   _list_escape_for_shell("${link_flags}" link_flags)
-
+  message("target = ${target}")
   # Set compilation and link flags.
   set_property(TARGET "${target}" APPEND_STRING PROPERTY
       COMPILE_FLAGS " ${c_compile_flags}")
@@ -1355,6 +1365,9 @@ endfunction()
 #
 # SWIFT_MODULE_DEPENDS_CYGWIN
 #   Swift modules this library depends on when built for Cygwin.
+#
+# SWIFT_MODULE_DEPENDS_MINGW
+#   Swift modules this library depends on when built for MinGW.
 #
 # SWIFT_MODULE_DEPENDS_HAIKU
 #   Swift modules this library depends on when built for Haiku.
@@ -1620,6 +1633,9 @@ function(add_swift_library name)
         elseif("${sdk}" STREQUAL "CYGWIN")
           list(APPEND swiftlib_module_depends_flattened
                ${SWIFTLIB_SWIFT_MODULE_DEPENDS_CYGWIN})
+        elseif("${sdk}" STREQUAL "MINGW")
+          list(APPEND swiftlib_module_depends_flattened
+               ${SWIFTLIB_SWIFT_MODULE_DEPENDS_MINGW})
         elseif("${sdk}" STREQUAL "HAIKU")
           list(APPEND swiftlib_module_depends_flattened
                ${SWIFTLIB_SWIFT_MODULE_DEPENDS_HAIKU})

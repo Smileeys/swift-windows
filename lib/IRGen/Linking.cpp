@@ -39,6 +39,7 @@ UniversalLinkageInfo::UniversalLinkageInfo(const llvm::Triple &triple,
                                            bool hasMultipleIGMs,
                                            bool isWholeModule)
     : IsELFObject(triple.isOSBinFormatELF()),
+      IsCOFFObject(triple.isOSBinFormatCOFF()),
       UseDLLStorage(useDllStorage(triple)), HasMultipleIGMs(hasMultipleIGMs),
       IsWholeModule(isWholeModule) {}
 

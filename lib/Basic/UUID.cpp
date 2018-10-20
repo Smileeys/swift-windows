@@ -20,7 +20,7 @@
 // WIN32 doesn't natively support <uuid/uuid.h>. Instead, we use Win32 APIs.
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
+#define NOMINMAX 1
 #include <objbase.h>
 #include <string>
 #else
@@ -42,7 +42,7 @@ swift::UUID::UUID(FromRandom_t) {
 
 swift::UUID::UUID(FromTime_t) {
 #if defined(_WIN32)
-  ::UUID uuid;
+  ::GUID uuid;
   ::CoCreateGuid(&uuid);
 
   memcpy(Value, &uuid, Size);
@@ -53,8 +53,7 @@ swift::UUID::UUID(FromTime_t) {
 
 swift::UUID::UUID() {
 #if defined(_WIN32)
-  ::UUID uuid = *((::UUID *)&Value);
-  UuidCreateNil(&uuid);
+  ::GUID uuid = GUID();
 
   memcpy(Value, &uuid, Size);
 #else
@@ -64,16 +63,16 @@ swift::UUID::UUID() {
 
 Optional<swift::UUID> swift::UUID::fromString(const char *s) {
 #if defined(_WIN32)
-  RPC_CSTR t = const_cast<RPC_CSTR>(reinterpret_cast<const unsigned char*>(s));
-
-  ::UUID uuid;
-  RPC_STATUS status = UuidFromStringA(t, &uuid);
-  if (status == RPC_S_INVALID_STRING_UUID) {
+  swift::UUID result;
+  int n = 0;
+  sscanf(s,
+    "%2hhx%2hhx%2hhx%2hhx-%2hhx%2hhx-%2hhx%2hhx-%2hhx%2hhx-%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%n",
+    &result.Value[0], &result.Value[1], &result.Value[2], &result.Value[3],
+    &result.Value[4], &result.Value[5], &result.Value[6], &result.Value[7],
+    &result.Value[8], &result.Value[9], &result.Value[10], &result.Value[11],
+    &result.Value[12], &result.Value[13], &result.Value[14], &result.Value[15], &n);
+  if (n != 36 || s[n] != '\0')
     return None;
-  }
-
-  swift::UUID result = UUID();
-  memcpy(result.Value, &uuid, Size);
   return result;
 #else
   swift::UUID result;
@@ -86,14 +85,12 @@ Optional<swift::UUID> swift::UUID::fromString(const char *s) {
 void swift::UUID::toString(llvm::SmallVectorImpl<char> &out) const {
   out.resize(UUID::StringBufferSize);
 #if defined(_WIN32)
-  ::UUID uuid;
-  memcpy(&uuid, Value, Size);
-
-  RPC_CSTR str;
-  UuidToStringA(&uuid, &str);
-
-  char* signedStr = reinterpret_cast<char*>(str);
-  memcpy(out.data(), signedStr, StringBufferSize);
+  sprintf(out.data(),
+    "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    Value[0], Value[1], Value[2], Value[3],
+    Value[4], Value[5], Value[6], Value[7],
+    Value[8], Value[9], Value[10], Value[11],
+    Value[12], Value[13], Value[14], Value[15]);
 #else
   uuid_unparse_upper(Value, out.data());
 #endif
@@ -104,14 +101,13 @@ void swift::UUID::toString(llvm::SmallVectorImpl<char> &out) const {
 
 int swift::UUID::compare(UUID y) const {
 #if defined(_WIN32)
-  RPC_STATUS s;
-  ::UUID uuid1;
+  ::GUID uuid1;
   memcpy(&uuid1, Value, Size);
 
-  ::UUID uuid2;
+  ::GUID uuid2;
   memcpy(&uuid2, y.Value, Size);
 
-  return UuidCompare(&uuid1, &uuid2, &s);
+  return memcmp(Value, y.Value, Size);
 #else
   return uuid_compare(Value, y.Value);
 #endif

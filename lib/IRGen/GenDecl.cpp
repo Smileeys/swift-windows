@@ -1209,6 +1209,26 @@ void IRGenerator::emitLazyDefinitions() {
   }
 }
 
+// FIXME: temporarial patch for MSVC
+bool EnabledDllStorage() {
+  static char *value = getenv("_USE_DLLSTORAGE");
+  if (value == nullptr || value[0] == '0')
+    return false;
+  return true;
+}
+
+static bool EnabledDllExport() { return EnabledDllStorage(); }
+
+bool EnabledDllImport() {
+  static char *value = getenv("FORCE_DLLIMPORT");
+  if (value == nullptr)
+    return EnabledDllStorage();
+  else if (value[0] == '1')
+    return true;
+  return false;
+}
+
+
 void IRGenerator::addLazyFunction(SILFunction *f) {
   // Add it to the queue if it hasn't already been put there.
   if (!LazilyEmittedFunctions.insert(f).second)
@@ -1346,7 +1366,7 @@ void IRGenModule::emitVTableStubs() {
     if (F.getEffectiveSymbolLinkage() == SILLinkage::Hidden)
       alias->setVisibility(llvm::GlobalValue::HiddenVisibility);
 
-    if (useDllStorage())
+    if (useDllStorage() && EnabledDllExport())
       alias->setDLLStorageClass(llvm::GlobalValue::DLLExportStorageClass);
   }
 }
@@ -1743,6 +1763,7 @@ static std::tuple<llvm::GlobalValue::LinkageTypes,
 getIRLinkage(const UniversalLinkageInfo &info, SILLinkage linkage,
              ForDefinition_t isDefinition,
              bool isWeakImported) {
+
 #define RESULT(LINKAGE, VISIBILITY, DLL_STORAGE)                               \
   std::make_tuple(llvm::GlobalValue::LINKAGE##Linkage,                         \
                   llvm::GlobalValue::VISIBILITY##Visibility,                   \
@@ -1756,10 +1777,10 @@ getIRLinkage(const UniversalLinkageInfo &info, SILLinkage linkage,
       info.IsELFObject ? llvm::GlobalValue::ProtectedVisibility
                        : llvm::GlobalValue::DefaultVisibility;
   llvm::GlobalValue::DLLStorageClassTypes ExportedStorage =
-      info.UseDLLStorage ? llvm::GlobalValue::DLLExportStorageClass
+      info.UseDLLStorage && EnabledDllExport() ? llvm::GlobalValue::DLLExportStorageClass
                          : llvm::GlobalValue::DefaultStorageClass;
   llvm::GlobalValue::DLLStorageClassTypes ImportedStorage =
-      info.UseDLLStorage ? llvm::GlobalValue::DLLImportStorageClass
+      info.UseDLLStorage && EnabledDllImport() ? llvm::GlobalValue::DLLImportStorageClass
                          : llvm::GlobalValue::DefaultStorageClass;
 
   switch (linkage) {

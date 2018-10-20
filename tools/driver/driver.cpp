@@ -186,6 +186,12 @@ int main(int argc_, const char **argv_) {
     return 1;
   }
 
+#if defined(__MINGW32__)
+  // The LLVM GetArgumentVector() overwrites argv[0] with GetModuleFileNameW().
+  // swift.exe should use the original argv[0] to make swift-invoker work well.
+  argv[0] = argv_[0];
+#endif
+
   // Expand any response files in the command line argument vector - arguments
   // may be passed through response files in the event of command line length
   // restrictions.

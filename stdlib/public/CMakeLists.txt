@@ -16,12 +16,15 @@ endif()
 # Build the runtime with -Wall to catch, e.g., uninitialized variables
 # warnings.
 list(APPEND SWIFT_RUNTIME_CXX_FLAGS "-Wall")
+if(CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
+  list(APPEND SWIFT_RUNTIME_CXX_FLAGS "-mcmodel=large")
+endif()
 
 set(SWIFT_RUNTIME_CORE_CXX_FLAGS "${SWIFT_RUNTIME_CXX_FLAGS}")
 set(SWIFT_RUNTIME_CORE_LINK_FLAGS "${SWIFT_RUNTIME_LINK_FLAGS}")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
-  list(APPEND SWIFT_RUNTIME_CORE_CXX_FLAGS "-mcmodel=large")
+if(MINGW STREQUAL "1")
+  list(APPEND SWIFT_CORE_CXX_FLAGS "-mcmodel=large")
 endif()
 
 # C++ code in the runtime and standard library should generally avoid

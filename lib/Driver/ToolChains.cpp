@@ -1916,6 +1916,16 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
   else if (staticStdlib) {
     Arguments.push_back(context.Args.MakeArgString(StaticRuntimeLibPath));
 
+#if defined(__CYGWIN__)
+    Arguments.push_back("-Xlinker");
+    Arguments.push_back("--allow-multiple-definition");
+    Arguments.push_back("-lswiftCore");
+    Arguments.push_back("-lpsapi");    
+
+    Arguments.push_back("-Xlinker");
+    Arguments.push_back("--export-all-symbols");
+#endif
+
     SmallString<128> linkFilePath = StaticRuntimeLibPath;
     llvm::sys::path::append(linkFilePath, "static-stdlib-args.lnk");
     auto linkFile = linkFilePath.str();
@@ -1968,8 +1978,13 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
 
   // This should be the last option, for convenience in checking output.
   Arguments.push_back("-o");
-  Arguments.push_back(context.Args.MakeArgString(
-      context.Output.getPrimaryOutputFilename()));
+//FIXME: Change this macro condition to the runtime logic
+  auto OutputExeFilename = context.Output.getPrimaryOutputFilename();
+#if defined(__MINGW32__)
+  if (OutputExeFilename.find(".") == std::string::npos)
+    OutputExeFilename = OutputExeFilename + ".exe";
+#endif
+  Arguments.push_back(context.Args.MakeArgString(OutputExeFilename));
 
   InvocationInfo II{Clang, Arguments};
   II.allowsResponseFiles = true;
