@@ -20,7 +20,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <Bcrypt.h>
+#if !defined(__MINGW32__)
 #pragma comment(lib, "Bcrypt.lib")
+#endif
 #else
 #include <pthread.h>
 #include <semaphore.h>
@@ -224,6 +226,8 @@ destroyTLS_CCAdjustmentThunk(void *ptr) {
   _stdlib_destroyTLS(ptr);
 }
 
+#if defined(__MINGW32__)
+#else
 typedef uint64_t ti_int;
 SWIFT_RUNTIME_STDLIB_INTERFACE
 ti_int __udivti3(ti_int a, ti_int b) {
@@ -241,6 +245,7 @@ SWIFT_RUNTIME_STDLIB_INTERFACE
 ti_int __modti3(ti_int a, ti_int b) {
   return 0;
 }
+#endif
 
 SWIFT_RUNTIME_STDLIB_INTERFACE
 int

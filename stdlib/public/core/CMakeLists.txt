@@ -227,6 +227,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND swift_core_private_link_libraries "-lpthread")
     list(APPEND swift_core_private_link_libraries "-lpsapi")
     list(APPEND swift_core_private_link_libraries "-latomic")
+    list(APPEND swift_core_private_link_libraries "-lbcrypt")
   endif()
 endif()
 

@@ -714,8 +714,6 @@ elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "WINDOWS")
 
 elseif("${SWIFT_HOST_VARIANT_SDK}" STREQUAL "MINGW")
 
-  set(SWIFT_SDK_MINGW_OBJECT_FORMAT "COFF")
-
   set(SWIFT_HOST_VARIANT "mingw" CACHE STRING
       "Deployment OS for Swift host tools (the compiler) [mingw].")
   

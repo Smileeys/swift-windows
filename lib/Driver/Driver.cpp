@@ -270,6 +270,8 @@ Driver::buildToolChain(const llvm::opt::InputArgList &ArgList) {
   case llvm::Triple::Win32:
     if (target.isWindowsCygwinEnvironment())
       return llvm::make_unique<toolchains::Cygwin>(*this, target);
+    if (target.isWindowsGNUEnvironment())
+      return llvm::make_unique<toolchains::Cygwin>(*this, target);
     return llvm::make_unique<toolchains::Windows>(*this, target);
   case llvm::Triple::Haiku:
     return llvm::make_unique<toolchains::GenericUnix>(*this, target);

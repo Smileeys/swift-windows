@@ -1865,7 +1865,13 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
     Arguments.push_back(context.Args.MakeArgString(SharedRuntimeLibPath));
   }
 
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__MINGW32__)
+  SmallString<128> swiftrtPath = SharedRuntimeLibPath;
+  llvm::sys::path::append(swiftrtPath,
+                          swift::getMajorArchitectureName(getTriple()));
+  llvm::sys::path::append(swiftrtPath, "swiftrt.obj");
+  Arguments.push_back(context.Args.MakeArgString(swiftrtPath));
+#elif !defined(_WIN32)
   SmallString<128> swiftrtPath = SharedRuntimeLibPath;
   llvm::sys::path::append(swiftrtPath,
                           swift::getMajorArchitectureName(getTriple()));
@@ -1983,8 +1989,9 @@ toolchains::GenericUnix::constructInvocation(const LinkJobAction &job,
 //FIXME: Change this macro condition to the runtime logic
   auto OutputExeFilename = context.Output.getPrimaryOutputFilename();
 #if defined(__MINGW32__)
+  std::string Filename = OutputExeFilename.str() + ".exe";
   if (OutputExeFilename.find(".") == std::string::npos)
-    OutputExeFilename = OutputExeFilename + ".exe";
+    OutputExeFilename = Filename;
 #endif
   Arguments.push_back(context.Args.MakeArgString(OutputExeFilename));
 

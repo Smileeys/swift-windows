@@ -138,8 +138,12 @@ void swift::addImageTypeMetadataRecordBlockCallback(const void *records,
   // point. Attempting to go through get() may also lead to an infinite loop,
   // since we register records during the initialization of
   // TypeMetadataRecords.
+#if __CYGWIN__
+  _registerTypeMetadataRecords(TypeMetadataRecords.get(), recordsBegin, recordsEnd);
+#else
   _registerTypeMetadataRecords(TypeMetadataRecords.unsafeGetAlreadyInitialized(),
                                recordsBegin, recordsEnd);
+#endif
 }
 
 void
@@ -433,8 +437,12 @@ void swift::addImageProtocolsBlockCallback(const void *protocols,
     = reinterpret_cast<const ProtocolRecord *>(protocolsBytes + protocolsSize);
 
   // Conformance cache should always be sufficiently initialized by this point.
+#if __CYGWIN__
+  _registerProtocols(Protocols.get(), recordsBegin, recordsEnd);
+#else
   _registerProtocols(Protocols.unsafeGetAlreadyInitialized(),
                      recordsBegin, recordsEnd);
+#endif
 }
 
 void swift::swift_registerProtocols(const ProtocolRecord *begin,

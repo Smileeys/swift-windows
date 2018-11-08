@@ -357,8 +357,12 @@ void swift::addImageProtocolConformanceBlockCallback(const void *conformances,
                                           (conformanceBytes + conformancesSize);
   
   // Conformance cache should always be sufficiently initialized by this point.
+#if __CYGWIN__
+  _registerProtocolConformances(Conformances.get(), recordsBegin, recordsEnd);
+#else
   _registerProtocolConformances(Conformances.unsafeGetAlreadyInitialized(),
                                 recordsBegin, recordsEnd);
+#endif
 }
 
 void

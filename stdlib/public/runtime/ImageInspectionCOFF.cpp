@@ -15,6 +15,7 @@
 #include "ImageInspection.h"
 #include "ImageInspectionCOFF.h"
 
+#include <assert.h>
 #if defined(__CYGWIN__)
 #include <dlfcn.h>
 #endif
@@ -54,6 +55,7 @@ void swift::initializeProtocolLookup() {
 
 void swift::initializeProtocolConformanceLookup() {
   const swift::MetadataSections *sections = registered;
+	assert(sections != nullptr && "registered sections is null");
   while (true) {
     const swift::MetadataSections::Range &conformances =
         sections->swift4_protocol_conformances;
